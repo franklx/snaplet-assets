@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module Snap.Snaplet.Assets.Utils where
 
 import           Control.Monad
@@ -21,7 +22,11 @@ ensureFileWithContents fp act = do
 
 runToolWith :: MonadIO m => FilePath -> [String] -> B.ByteString -> m B.ByteString
 runToolWith tool args input = liftIO $ do
+#if defined(mingw32_HOST_OS)
+    (status, out, err) <- readProcessWithExitCode "cmd" ("/c" : tool : args) input
+#else
     (status, out, err) <- readProcessWithExitCode tool args input
+#endif    
     case status of
         ExitSuccess -> return out
         ExitFailure i -> error $ printf "Error reported from '%s' (shell exited %d): %s" tool i (T.unpack $ decodeUtf8 err)
